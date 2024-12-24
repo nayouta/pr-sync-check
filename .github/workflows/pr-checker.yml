@@ -1,0 +1,28 @@
+name: PR Sync Check with Base Branch
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, unlocked]
+
+jobs:
+  check-base-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+
+      - name: Compare with base branch
+        run: |
+          if [ "$(git rev-list HEAD..origin/${{ github.event.pull_request.base.ref }})" != "" ]; then
+            echo "Warning: The PR has not incorporated the latest commit from the base branch."
+            echo "You need to merge or rebase the base branch and then commit again."
+            exit 1
+          else
+            echo "Notice: The PR is synchronized with the base branch."
+          fi
